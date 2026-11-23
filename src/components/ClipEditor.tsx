@@ -315,7 +315,7 @@ export function ClipEditor({ active }: { active: boolean }) {
         {hidden}
         <UploadScreen
           onPickFile={() => fileRef.current?.click()}
-          onDropFile={loadFile}
+          onFile={loadFile}
           onLoadUrl={loadUrl}
           loading={!!source && !loadError}
           error={loadError}

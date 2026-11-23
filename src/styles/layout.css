@@ -135,7 +135,4 @@
   .main {
     padding: var(--s6) var(--s6) var(--s8);
   }
-  .toast-region {
-    bottom: var(--s6);
-  }
 }

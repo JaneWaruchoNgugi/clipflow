@@ -391,6 +391,11 @@
 .alert--error svg {
   color: var(--danger);
 }
+.alert--ok {
+  background: rgba(52, 211, 153, 0.1);
+  color: #a7f3d0;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+}
 .alert--warn {
   background: var(--warn-bg);
   color: #fde68a;
@@ -402,7 +407,7 @@
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(var(--bottomnav-h) + var(--safe-b) + 84px);
+  top: calc(var(--appbar-h) + var(--s3));
   z-index: 60;
   display: flex;
   justify-content: center;
@@ -447,7 +452,7 @@
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(-8px);
   }
 }
 

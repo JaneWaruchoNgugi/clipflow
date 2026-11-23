@@ -1,43 +1,50 @@
 # ClipFlow: Shorts Studio
 
-A mobile-first web app for turning your own videos into short vertical clips. Everything runs in the browser; nothing is uploaded.
+A mobile-first web app for turning videos into short clips. Editing and export run in the browser; your own videos never leave the device.
 
 ## Features
 
-- **Clip editor**: pick a video from your gallery, drag the start/end handles (or nudge by 0.1s, or "Set start/end here" while playing).
-- **Captions**: text overlay with position (top/middle/bottom), size, style (box/outline/plain) and colour.
-- **Formats**: vertical 9:16, square 1:1 or original; fill (crop), fit + blurred background, or fit + black bars; 720p or 1080p.
-- **Local export**: the trimmed clip is rendered to a canvas and recorded with `MediaRecorder`, audio included. MP4 where the browser supports it, otherwise WebM. Save or share from the phone.
-- **Saved links**: keep a list of video links (stored in `localStorage` on this device).
+- **Get a video**: choose one from your phone, drag one in on desktop, paste a direct video-file link, or paste a YouTube, TikTok, Instagram, Facebook or X link (needs your own download server, see below), then **Save** it or **Edit** it.
+- **Timeline trim**: filmstrip with a trim frame. Drag the edges, tap to scrub, nudge by 0.1s, or "Start here / End here" while playing. Edges are keyboard sliders too (arrows, Shift for 1s).
+- **Captions**: position, style (box / outline / shadow), size and colour, previewed live.
+- **Formats**: 9:16, 16:9, 1:1 or original; fill, blurred bars or black bars; 720p or 1080p.
+- **Export**: rendered locally with canvas + `MediaRecorder`, audio included, with progress, cancel, save and share. MP4 where the browser supports it, otherwise WebM.
+- **Saved links**: keep video links on this device, with undo on delete.
 
-ClipFlow does not download videos from YouTube, TikTok or Instagram.
+Only download videos you own or have permission to use.
 
 ## Develop
 
 ```bash
 npm install
-npm run dev          # local dev server
+npm run dev            # local dev server
 npm run typecheck
-npm run build        # static site in dist/
-npm run build:single # one self-contained HTML file in dist-single/index.html
+npm run build          # static site in dist/
+npm run build:single   # one self-contained HTML file in dist-single/index.html
+npm run test:server    # download server tests (pip install -r server/requirements.txt pytest httpx)
 ```
 
-The single-file build can be copied to a phone and opened directly in Chrome.
+## Download server
 
-## How export works
+`server/` is a small FastAPI + yt-dlp + ffmpeg service. It only accepts links from the supported sites (so it can't be used to fetch other URLs), returns H.264/AAC MP4s, enforces length and size limits, and requires an access key.
 
-Export plays the selected range in real time, drawing each frame plus the caption onto a canvas, and records `canvas.captureStream()` together with the video's audio (routed through Web Audio so the speakers stay silent). A 30 second clip therefore takes about 30 seconds; keep the screen on while it runs. Works best in an up-to-date Chrome.
+Deploy it with the app on Firebase (Hosting + Cloud Run): see **[server/DEPLOY.md](server/DEPLOY.md)**, written to be followed from a phone.
 
 ## Project layout
 
 ```
 src/
-  App.tsx                  tabs: Clip Editor / Saved Links
-  components/ClipEditor.tsx
-  components/TrimSlider.tsx
-  components/SavedLinks.tsx
-  lib/render.ts            frame + caption drawing
-  lib/exporter.ts          MediaRecorder export
-  lib/audio.ts             Web Audio routing
-  lib/links.ts             saved-link storage and URL helpers
+  App.tsx                      app shell: top nav (desktop), bottom nav (mobile)
+  components/
+    ClipEditor.tsx             editor state, loading, export orchestration
+    UploadScreen.tsx           choose file / paste link / link downloads
+    PreviewStage.tsx           fitted canvas preview
+    Timeline.tsx               filmstrip trim timeline
+    panels.tsx                 Trim, Caption and Format panels
+    ExportSheet.tsx            export confirm / progress / done / error
+    SavedLinks.tsx, ServerSettings.tsx, Toast.tsx, Icon.tsx, ui.tsx
+  hooks/                       useVideoTime, useThumbnails
+  lib/                         render, exporter, audio, remote, links, source
+  styles/                      tokens, base, components, layout, editor, links
+server/                        download server (see DEPLOY.md)
 ```
