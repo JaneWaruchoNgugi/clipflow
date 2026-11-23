@@ -10,6 +10,9 @@ export function outputSize(video: HTMLVideoElement, s: EditSettings): { w: numbe
   if (s.format === '9:16') {
     w = q;
     h = Math.round((q * 16) / 9);
+  } else if (s.format === '16:9') {
+    w = Math.round((q * 16) / 9);
+    h = q;
   } else if (s.format === '1:1') {
     w = q;
     h = q;
