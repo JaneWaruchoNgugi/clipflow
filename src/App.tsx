@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { ClipEditor } from './components/ClipEditor';
+import { Icon, type IconName } from './components/Icon';
 import { SavedLinks } from './components/SavedLinks';
 import { ToastProvider } from './components/Toast';
 
 type View = 'editor' | 'links';
+const NAV: { id: View; label: string; icon: IconName }[] = [
+  { id: 'editor', label: 'Editor', icon: 'scissors' },
+  { id: 'links', label: 'Saved links', icon: 'bookmark' },
+];
 
 export default function App() {
   const [view, setView] = useState<View>('editor');
@@ -12,39 +17,50 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
+  const navItems = (cls: string) =>
+    NAV.map((n) => (
+      <button
+        key={n.id}
+        type="button"
+        className={`${cls}${view === n.id ? ' is-on' : ''}`}
+        aria-current={view === n.id ? 'page' : undefined}
+        onClick={() => go(n.id)}
+      >
+        <Icon name={n.icon} size={20} />
+        <span>{n.label}</span>
+      </button>
+    ));
+
   return (
     <ToastProvider>
-      <header>
-        <div className="logo">▶</div>
-        <div>
-          <h1>ClipFlow</h1>
-          <small>Shorts Studio · everything stays on your phone</small>
+      <a className="skip" href="#main">
+        Skip to content
+      </a>
+      <header className="appbar">
+        <div className="brand">
+          <span className="brand__mark" aria-hidden="true">
+            <Icon name="play" size={14} />
+          </span>
+          <span className="brand__name">ClipFlow</span>
+          <span className="brand__tag">Shorts Studio</span>
         </div>
+        <nav className="topnav" aria-label="Main">
+          {navItems('topnav__item')}
+        </nav>
       </header>
-      <main>
-        {/* Editor stays mounted so switching tabs keeps your video and edits. */}
-        <section className={`view${view === 'editor' ? ' on' : ''}`}>
+
+      <main id="main" className={`main main--${view}`}>
+        {/* The editor stays mounted so switching tabs keeps your video and edits. */}
+        <div hidden={view !== 'editor'}>
           <ClipEditor active={view === 'editor'} />
-        </section>
-        <section className={`view${view === 'links' ? ' on' : ''}`}>
+        </div>
+        <div hidden={view !== 'links'}>
           <SavedLinks />
-        </section>
+        </div>
       </main>
-      <nav>
-        <button type="button" className={view === 'editor' ? 'on' : ''} onClick={() => go('editor')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <path d="M10 9l5 3-5 3z" fill="currentColor" />
-          </svg>
-          Clip Editor
-        </button>
-        <button type="button" className={view === 'links' ? 'on' : ''} onClick={() => go('links')}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" />
-            <path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" />
-          </svg>
-          Saved Links
-        </button>
+
+      <nav className="bottomnav" aria-label="Main">
+        {navItems('bottomnav__item')}
       </nav>
     </ToastProvider>
   );

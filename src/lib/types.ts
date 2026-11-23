@@ -1,6 +1,6 @@
 export type CaptionPosition = 'top' | 'middle' | 'bottom';
 export type CaptionStyle = 'box' | 'outline' | 'plain';
-export type Format = '9:16' | '1:1' | 'orig';
+export type Format = '9:16' | '16:9' | '1:1' | 'orig';
 export type Fit = 'fill' | 'blur' | 'black';
 export type Quality = '720' | '1080';
 

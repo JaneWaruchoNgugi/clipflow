@@ -9,7 +9,9 @@
     "build": "tsc -b && vite build",
     "build:single": "tsc -b && vite build --mode single",
     "typecheck": "tsc -b",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:server": "cd server && python -m pytest -q",
+    "deploy:hosting": "npm run build && npx firebase-tools deploy --only hosting"
   },
   "dependencies": {
     "react": "^19.3.1",

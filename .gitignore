@@ -2,3 +2,9 @@ node_modules
 dist
 dist-single
 *.log
+.env
+.env.local
+.firebase
+server/__pycache__
+server/.pytest_cache
+*.tsbuildinfo

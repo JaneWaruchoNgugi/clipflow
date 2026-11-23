@@ -24,8 +24,15 @@ export function pickMimeType(): string | null {
   return '';
 }
 
-export function canExport(canvas: HTMLCanvasElement): boolean {
-  return pickMimeType() !== null && typeof canvas.captureStream === 'function';
+export function canExport(): boolean {
+  return pickMimeType() !== null && typeof HTMLCanvasElement.prototype.captureStream === 'function';
+}
+
+/** File type the browser will produce: used to set expectations before exporting. */
+export function expectedContainer(): 'MP4' | 'WebM' | null {
+  const m = pickMimeType();
+  if (m === null) return null;
+  return m.includes('mp4') ? 'MP4' : 'WebM';
 }
 
 export interface ExportResult {
@@ -33,21 +40,31 @@ export interface ExportResult {
   ext: 'mp4' | 'webm';
 }
 
+export class ExportCancelled extends Error {
+  constructor() {
+    super('Export cancelled');
+    this.name = 'ExportCancelled';
+  }
+}
+
 function seekTo(video: HTMLVideoElement, t: number): Promise<void> {
   return new Promise((resolve) => {
+    let timer = 0;
     const done = () => {
+      window.clearTimeout(timer);
       video.removeEventListener('seeked', done);
       resolve();
     };
     video.addEventListener('seeked', done);
+    timer = window.setTimeout(done, 1500);
     video.currentTime = t;
-    setTimeout(done, 1500);
   });
 }
 
 /**
  * Plays the trimmed range in real time, drawing each frame (with caption) to the canvas
  * and recording the canvas plus the video's audio with MediaRecorder.
+ * Only the recorded output is held in memory, never the source file.
  */
 export async function exportClip(opts: {
   video: HTMLVideoElement;
@@ -56,10 +73,12 @@ export async function exportClip(opts: {
   end: number;
   settings: EditSettings;
   onProgress: (p: number) => void;
+  signal?: AbortSignal;
 }): Promise<ExportResult> {
-  const { video, canvas, start, end, settings, onProgress } = opts;
+  const { video, canvas, start, end, settings, onProgress, signal } = opts;
   const mime = pickMimeType();
   if (mime === null || !canvas.captureStream) throw new Error('This browser cannot record video.');
+  if (signal?.aborted) throw new ExportCancelled();
 
   const audio = getAudioRoute(video);
   video.pause();
@@ -84,14 +103,13 @@ export async function exportClip(opts: {
   };
   const stopped = new Promise<void>((r) => (rec.onstop = () => r()));
 
-  await seekTo(video, start);
-  drawFrame(canvas, video, settings);
-  rec.start(250);
-
   let finished = false;
+  let cancelled = false;
+  let raf = 0;
   const stop = () => {
     if (finished) return;
     finished = true;
+    cancelAnimationFrame(raf);
     video.pause();
     try {
       rec.stop();
@@ -99,32 +117,50 @@ export async function exportClip(opts: {
       /* already stopped */
     }
   };
-  const tick = () => {
-    if (finished) return;
-    drawFrame(canvas, video, settings);
-    onProgress(Math.min(1, (video.currentTime - start) / (end - start)));
-    if (video.currentTime >= end || video.ended) {
-      stop();
-      return;
-    }
-    requestAnimationFrame(tick);
-  };
-  video.addEventListener('ended', stop, { once: true });
-  try {
-    await video.play();
-  } catch {
+  const onAbort = () => {
+    cancelled = true;
     stop();
-  }
-  requestAnimationFrame(tick);
-  // Safety net in case the tab gets throttled in the background.
-  const safety = setTimeout(stop, (end - start) * 2500 + 5000);
-  await stopped;
-  clearTimeout(safety);
-  stream.getVideoTracks().forEach((t) => t.stop());
-  audio?.setSpeakerMuted(false);
+  };
+  signal?.addEventListener('abort', onAbort);
 
+  try {
+    await seekTo(video, start);
+    drawFrame(canvas, video, settings);
+    rec.start(250);
+    if (cancelled) stop();
+
+    const tick = () => {
+      if (finished) return;
+      drawFrame(canvas, video, settings);
+      onProgress(Math.max(0, Math.min(1, (video.currentTime - start) / (end - start))));
+      if (video.currentTime >= end || video.ended) {
+        stop();
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    video.addEventListener('ended', stop, { once: true });
+    try {
+      if (!finished) await video.play();
+    } catch {
+      stop();
+    }
+    raf = requestAnimationFrame(tick);
+    // Safety net in case the tab gets throttled in the background.
+    const safety = window.setTimeout(stop, (end - start) * 2500 + 5000);
+    await stopped;
+    window.clearTimeout(safety);
+    video.removeEventListener('ended', stop);
+  } finally {
+    signal?.removeEventListener('abort', onAbort);
+    stream.getVideoTracks().forEach((t) => t.stop());
+    audio?.setSpeakerMuted(false);
+  }
+
+  if (cancelled) throw new ExportCancelled();
   const type = (rec.mimeType || mime || 'video/webm').split(';')[0];
   const blob = new Blob(chunks, { type });
   if (!blob.size) throw new Error('Nothing was recorded. Try again, and keep the screen on while it runs.');
+  onProgress(1);
   return { blob, ext: type.includes('mp4') ? 'mp4' : 'webm' };
 }
