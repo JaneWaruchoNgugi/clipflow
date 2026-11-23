@@ -7,3 +7,4 @@ dist-single
 .firebase
 server/__pycache__
 server/.pytest_cache
+*.tsbuildinfo
