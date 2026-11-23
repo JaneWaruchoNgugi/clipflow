@@ -47,7 +47,7 @@ export function UploadScreen({ onPickFile, onFile, onLoadUrl, loading, error, on
       }
       const err = e instanceof RemoteError ? e : new RemoteError('Something went wrong. Try again.', 'unknown');
       setJob({ phase: 'error', site, message: err.message, code: err.code });
-      if (err.code === 'bad_key') setShowSettings(true);
+      if (err.code === 'bad_key' || err.code === 'offline') setShowSettings(true);
     } finally {
       abortRef.current = null;
     }
@@ -186,7 +186,7 @@ export function UploadScreen({ onPickFile, onFile, onLoadUrl, loading, error, on
       ) : (
         <button type="button" className="linkbtn" onClick={() => setShowSettings(true)}>
           <Icon name="link" size={16} />
-          {server.url ? 'Download server: connected · change' : 'Set up the download server'}
+          {server.url ? 'Download server settings' : 'Set up the download server'}
         </button>
       )}
     </div>

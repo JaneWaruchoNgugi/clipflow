@@ -9,6 +9,7 @@ Environment variables (all optional):
   ACCESS_KEY        If set, every request must send header `X-ClipFlow-Key: <value>`.
                     Strongly recommended so strangers can't use your server.
   ALLOWED_ORIGINS   Comma-separated web origins allowed to call the API (CORS). Default "*".
+  ALLOWED_ORIGIN_REGEX  Extra allowed origins as a regex, e.g. https://clipflow-.*\.vercel\.app
   MAX_DURATION      Longest video accepted, in seconds. Default 900 (15 min).
   MAX_HEIGHT        Highest resolution fetched. Default 1080.
   MAX_FILESIZE_MB   Largest file accepted. Default 400.
@@ -38,6 +39,8 @@ from starlette.concurrency import run_in_threadpool
 
 ACCESS_KEY = os.environ.get("ACCESS_KEY", "")
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "*").split(",") if o.strip()]
+# Extra origins by pattern, e.g. every Vercel preview: https://clipflow-.*\.vercel\.app
+ALLOWED_ORIGIN_REGEX = os.environ.get("ALLOWED_ORIGIN_REGEX") or None
 MAX_DURATION = int(os.environ.get("MAX_DURATION", "900"))
 MAX_HEIGHT = int(os.environ.get("MAX_HEIGHT", "1080"))
 MAX_FILESIZE = int(os.environ.get("MAX_FILESIZE_MB", "400")) * 1024 * 1024
@@ -58,6 +61,7 @@ app = FastAPI(title="ClipFlow download server", docs_url=None, redoc_url=None)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "X-ClipFlow-Key"],
     expose_headers=["Content-Disposition", "Content-Length", "X-Video-Title", "X-Video-Site"],

@@ -92,7 +92,14 @@ export async function fetchRemoteVideo(
     });
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e;
-    throw new RemoteError('Can’t reach your download server. Check your connection and the server address.', 'offline');
+    // Browsers report "no server here", a crash and CORS the same way; ask /api/health to tell them apart.
+    const alive = await fetch(`${apiBase(c.url)}/api/health`, { signal }).then((h) => h.ok, () => false);
+    throw new RemoteError(
+      alive
+        ? 'The server is up but refused this app’s request. Check ALLOWED_ORIGINS on the server (see DEPLOY.md).'
+        : `No ClipFlow server answered at ${apiBase(c.url)}. Check that the deploy finished and that the address in server settings matches it.`,
+      alive ? 'cors' : 'offline',
+    );
   }
   if (!r.ok) {
     let msg = `The server couldn’t get this video (error ${r.status}).`;
