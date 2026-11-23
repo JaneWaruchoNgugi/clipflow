@@ -7,8 +7,13 @@ export interface ServerConfig {
   key: string;
 }
 
-/** Build-time default, e.g. VITE_API_URL=https://clipflow-api-xxxx.a.run.app */
-const DEFAULT_URL = (import.meta.env.VITE_API_URL as string | undefined)?.trim() ?? '';
+/**
+ * Default server address. VITE_API_URL overrides it at build time; otherwise it is the
+ * Cloud Run address that `gcloud run deploy clipflow-api` gets in Firebase project
+ * clipflow-e1d70 (project number 212955757755, region us-central1).
+ */
+const DEFAULT_URL =
+  (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'https://clipflow-api-212955757755.us-central1.run.app';
 
 export function loadServerConfig(): ServerConfig {
   try {

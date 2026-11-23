@@ -2,7 +2,7 @@
 
 This puts two things in your Firebase project:
 
-1. **The app** on Firebase Hosting, at `https://YOUR_PROJECT_ID.web.app`
+1. **The app** on Firebase Hosting, at `https://clipflow-e1d70.web.app`
 2. **The download server** on Cloud Run (part of the same Google Cloud project), which fetches YouTube, TikTok and Instagram videos for the app
 
 Everything below can be done in your phone's browser. It takes about 15 minutes.
@@ -11,16 +11,16 @@ Everything below can be done in your phone's browser. It takes about 15 minutes.
 
 ## What you need
 
-- Your **Firebase project ID**. In the Firebase console, tap the gear icon, then **Project settings**. It's the "Project ID" line (for example `clipflow-1a2b3`). The web app config (apiKey and so on) isn't needed.
+- Your Firebase project: **`clipflow-e1d70`** (already filled in below). The web app config (apiKey and so on) isn't needed.
 - The **Blaze (pay as you go) plan** on that project. Cloud Run needs it. Personal use usually stays inside Google's free monthly allowance, but set a budget alert so you're never surprised:
   Firebase console → **Usage and billing** → **Details & settings** → **Modify plan** → Blaze, then add a budget (for example $5).
 
 ## 1. Open Cloud Shell
 
-Open <https://shell.cloud.google.com/?show=terminal> and sign in with the same Google account as Firebase. You get a terminal in the browser. Paste each block below and press Enter. Replace `YOUR_PROJECT_ID` with your project ID.
+Open <https://shell.cloud.google.com/?show=terminal> and sign in with the same Google account as Firebase. You get a terminal in the browser. Paste each block below and press Enter.
 
 ```bash
-gcloud config set project YOUR_PROJECT_ID
+gcloud config set project clipflow-e1d70
 gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
 git clone https://github.com/JaneWaruchoNgugi/clipflow && cd clipflow
 ```
@@ -35,10 +35,10 @@ KEY=$(openssl rand -hex 16); echo "Your access key: $KEY"
 gcloud run deploy clipflow-api --source server --region us-central1 \
   --allow-unauthenticated --memory 1Gi --cpu 1 --timeout 900 \
   --concurrency 4 --max-instances 2 \
-  --set-env-vars "ACCESS_KEY=$KEY,ALLOWED_ORIGINS=https://$PROJECT.web.app,https://$PROJECT.firebaseapp.com"
+  --set-env-vars "ACCESS_KEY=$KEY"
 ```
 
-If it asks to create an Artifact Registry repository, answer `Y`. When it finishes it prints a **Service URL** like `https://clipflow-api-abc123-uc.a.run.app`. Copy it.
+If it asks to create an Artifact Registry repository, answer `Y`. When it finishes it prints a **Service URL**. It should be `https://clipflow-api-212955757755.us-central1.run.app`, which the app already uses by default. If yours is different, you'll paste it into the app in step 4.
 
 ("allow-unauthenticated" just means the app can reach it; the access key is what keeps strangers out.)
 
@@ -56,7 +56,7 @@ The login step shows a link: open it, sign in, and paste the code back into Clou
 
 ## 4. Connect the app to your server
 
-1. Open `https://YOUR_PROJECT_ID.web.app` on your phone.
+1. Open `https://clipflow-e1d70.web.app` on your phone (your Vercel address works too).
 2. Tap **Set up the download server**. The address is already filled in; paste your **access key** and tap **Save & test**.
 3. Paste a YouTube, TikTok or Instagram link and tap **Get video**. Then choose **Save** or **Edit**.
 
@@ -95,7 +95,7 @@ Set with `--update-env-vars NAME=value` on `gcloud run services update clipflow-
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `ACCESS_KEY` | none | Required key for every request (set in step 2). |
-| `ALLOWED_ORIGINS` | `*` | Web addresses allowed to call the server. |
+| `ALLOWED_ORIGINS` | `*` | Web addresses allowed to call the server (the access key already keeps strangers out; narrow this if you like, e.g. `https://clipflow-e1d70.web.app`). |
 | `MAX_DURATION` | `900` | Longest video in seconds. |
 | `MAX_HEIGHT` | `1080` | Highest resolution fetched. |
 | `MAX_FILESIZE_MB` | `400` | Largest file. |
