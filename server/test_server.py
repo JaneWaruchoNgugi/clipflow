@@ -68,3 +68,20 @@ def test_download_streams_file_with_cors(monkeypatch, tmp_path):
     assert r.headers["access-control-allow-origin"] == "https://clipflow.web.app"
     assert "My-clip.mp4" in r.headers["content-disposition"]
     assert r.headers["x-video-site"] == "TikTok"
+
+
+def test_preflight_passes_without_key():
+    _, c = make({"ACCESS_KEY": "s3cret", "ALLOWED_ORIGINS": "https://clipflow-e1d70.web.app", "ALLOWED_ORIGIN_REGEX": r"https://clipflow-.*\.vercel\.app"})
+    for origin in ["https://clipflow-two-pink.vercel.app", "https://clipflow-e1d70.web.app"]:
+        r = c.options("/api/download", headers={"Origin": origin, "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "content-type,x-clipflow-key"})
+        assert r.status_code == 200, r.text
+        assert r.headers["access-control-allow-origin"] == origin
+    os.environ.pop("ALLOWED_ORIGIN_REGEX", None)
+    os.environ["ALLOWED_ORIGINS"] = "*"
+
+
+def test_default_allows_any_origin_preflight():
+    os.environ.pop("ALLOWED_ORIGIN_REGEX", None)
+    _, c = make({"ALLOWED_ORIGINS": "*", "ACCESS_KEY": "k"})
+    r = c.options("/api/download", headers={"Origin": "https://clipflow-two-pink.vercel.app", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "content-type,x-clipflow-key"})
+    assert r.status_code == 200 and r.headers["access-control-allow-origin"] in ("*", "https://clipflow-two-pink.vercel.app")

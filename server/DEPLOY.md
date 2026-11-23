@@ -72,7 +72,7 @@ In Cloud Shell, `cd clipflow && git pull`, then run step 2 again (it reuses the 
 | --- | --- |
 | "Wrong or missing access key" | Re-enter the key in the app's server settings. |
 | "…asked the server to sign in…" | The video is private or age-restricted, or the site is limiting cloud servers. YouTube does this most. See *Cookies* below. |
-| "Can't reach your download server" | Check the address in the app's server settings, and that step 2 finished without errors. |
+| "No ClipFlow server answered at …" | The server isn't at that address. In Cloud Shell run `gcloud run services list --format="value(metadata.name,region,status.url)"`. If `clipflow-api` isn't listed, step 2 didn't finish: run it again and read the last error. If it is listed with a different URL, paste that URL into the app's server settings. |
 | "The server is busy" | Wait for the other download to finish. |
 
 ### Cookies (optional, for YouTube "sign in" errors)
@@ -95,6 +95,7 @@ Set with `--update-env-vars NAME=value` on `gcloud run services update clipflow-
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `ACCESS_KEY` | none | Required key for every request (set in step 2). |
+| `ALLOWED_ORIGIN_REGEX` | none | Extra allowed web addresses by pattern, e.g. `https://clipflow-.*\.vercel\.app`. |
 | `ALLOWED_ORIGINS` | `*` | Web addresses allowed to call the server (the access key already keeps strangers out; narrow this if you like, e.g. `https://clipflow-e1d70.web.app`). |
 | `MAX_DURATION` | `900` | Longest video in seconds. |
 | `MAX_HEIGHT` | `1080` | Highest resolution fetched. |
